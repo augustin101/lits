@@ -23,9 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.lits.R
 
 private val GRID_SIZES = listOf(5, 6, 7, 8, 9, 10)
 
@@ -44,7 +46,7 @@ fun WelcomeScreen(
         ) {
             Icon(
                 imageVector = Icons.Filled.Settings,
-                contentDescription = "Settings",
+                contentDescription = stringResource(R.string.cd_settings),
                 modifier = Modifier.size(36.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -58,13 +60,13 @@ fun WelcomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
         Text(
-            text = "LITS",
+            text = stringResource(R.string.app_title),
             fontSize = 52.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Polyomino logic puzzle",
+            text = stringResource(R.string.app_subtitle),
             fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -72,7 +74,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
-            text = "Select a grid size",
+            text = stringResource(R.string.select_grid_size),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -116,7 +118,7 @@ private fun LevelCard(size: Int, modifier: Modifier = Modifier, onClick: () -> U
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "${size}×${size}",
+                text = stringResource(R.string.grid_size_label, size),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface

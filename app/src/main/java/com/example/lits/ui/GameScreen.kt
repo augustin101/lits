@@ -41,10 +41,12 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.lits.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,16 +56,6 @@ import com.example.lits.logic.CellState
 import com.example.lits.logic.GameState
 import com.example.lits.logic.PolyominoType
 
-// Shape colors per CLAUDE.md
-private val COLOR_L = Color(0xFF4A90E2)
-private val COLOR_I = Color(0xFF00BCD4)
-private val COLOR_T = Color(0xFF9C27B0)
-private val COLOR_S = Color(0xFF4CAF50)
-private val COLOR_SHADED = Color(0xFF707070)
-private val COLOR_ERROR_STRIPE = Color(0xCCEF9A9A) // muted pastel red, semi-transparent
-private val COLOR_EMPTY = Color(0xFFEEEEEE)
-private val COLOR_GRID_LINE_THIN = Color(0xFFBDBDBD)
-private val COLOR_GRID_LINE_THICK = Color(0xFF212121)
 
 @Composable
 fun GameScreen(
@@ -109,10 +101,10 @@ fun GameScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(28.dp))
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), modifier = Modifier.size(28.dp))
             }
             Text(
-                text = "${gameState.level.size}×${gameState.level.size}  —  Level ${viewModel.levelIndex + 1}",
+                text = stringResource(R.string.game_title, gameState.level.size, viewModel.levelIndex + 1),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -129,11 +121,11 @@ fun GameScreen(
         ) {
             if (!zenMode && gameState.validationResult.isSolved) {
                 Surface(
-                    color = Color(0xFF4CAF50),
+                    color = ColorSolved,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "SOLVED!",
+                        text = stringResource(R.string.solved_label),
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -155,11 +147,11 @@ fun GameScreen(
                     OutlinedButton(
                         onClick = { /* TODO: hint */ },
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
-                    ) { Text("Hint", fontSize = 13.sp) }
+                    ) { Text(stringResource(R.string.hint_button), fontSize = 13.sp) }
                     OutlinedButton(
                         onClick = { viewModel.resetGame() },
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
-                    ) { Text("Reset", fontSize = 13.sp) }
+                    ) { Text(stringResource(R.string.reset_button), fontSize = 13.sp) }
                 }
                 if (!zenMode) {
                     Text(
@@ -168,7 +160,7 @@ fun GameScreen(
                         fontWeight = FontWeight.Medium,
                         fontFamily = FontFamily.Monospace,
                         color = if (gameState.validationResult.isSolved)
-                            Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
+                            ColorSolved else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -211,22 +203,22 @@ private fun StatusRow(gameState: GameState) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StatusChip(label = "Connected", ok = result.isConnected)
-        StatusChip(label = "No 2×2", ok = result.violating2x2Cells.isEmpty())
-        StatusChip(label = "No twins", ok = result.conflictingRegions.isEmpty())
+        StatusChip(label = stringResource(R.string.status_connected), ok = result.isConnected)
+        StatusChip(label = stringResource(R.string.status_no_2x2), ok = result.violating2x2Cells.isEmpty())
+        StatusChip(label = stringResource(R.string.status_no_twins), ok = result.conflictingRegions.isEmpty())
     }
 }
 
 @Composable
 private fun StatusChip(label: String, ok: Boolean) {
     Surface(
-        color = if (ok) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+        color = if (ok) ColorStatusOkBackground else ColorStatusErrorBackground,
         shape = RoundedCornerShape(16.dp)
     ) {
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            color = if (ok) Color(0xFF388E3C) else Color(0xFFC62828),
+            color = if (ok) ColorStatusOkText else ColorStatusErrorText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
@@ -236,10 +228,10 @@ private fun StatusChip(label: String, ok: Boolean) {
 @Composable
 private fun Legend() {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        LegendItem("L", COLOR_L)
-        LegendItem("I", COLOR_I)
-        LegendItem("T", COLOR_T)
-        LegendItem("S", COLOR_S)
+        LegendItem(stringResource(R.string.shape_l), ColorShapeL)
+        LegendItem(stringResource(R.string.shape_i), ColorShapeI)
+        LegendItem(stringResource(R.string.shape_t), ColorShapeT)
+        LegendItem(stringResource(R.string.shape_s), ColorShapeS)
     }
 }
 
@@ -329,15 +321,15 @@ fun GameGrid(
                 val fillColor = when {
                     state == CellState.SHADED && regionVal?.isValid == true -> {
                         when (regionVal.shapeType) {
-                            PolyominoType.L -> COLOR_L
-                            PolyominoType.I -> COLOR_I
-                            PolyominoType.T -> COLOR_T
-                            PolyominoType.S -> COLOR_S
-                            null -> COLOR_SHADED
+                            PolyominoType.L -> ColorShapeL
+                            PolyominoType.I -> ColorShapeI
+                            PolyominoType.T -> ColorShapeT
+                            PolyominoType.S -> ColorShapeS
+                            null -> ColorCellShaded
                         }
                     }
-                    state == CellState.SHADED -> COLOR_SHADED
-                    else -> COLOR_EMPTY
+                    state == CellState.SHADED -> ColorCellShaded
+                    else -> ColorCellEmpty
                 }
 
                 drawRect(
@@ -357,7 +349,7 @@ fun GameGrid(
                         var x = left - cellPx
                         while (x < right + cellPx) {
                             drawLine(
-                                color = COLOR_ERROR_STRIPE,
+                                color = ColorErrorStripe,
                                 start = Offset(x, bottom),
                                 end = Offset(x + cellPx, top),
                                 strokeWidth = cellPx * 0.06f
@@ -372,13 +364,13 @@ fun GameGrid(
                     val pad = cellPx * 0.28f
                     val strokeW = (cellPx * 0.08f).coerceAtLeast(3f)
                     drawLine(
-                        color = Color(0xFF757575),
+                        color = ColorCellMark,
                         start = Offset(c * cellPx + pad, r * cellPx + pad),
                         end = Offset((c + 1) * cellPx - pad, (r + 1) * cellPx - pad),
                         strokeWidth = strokeW
                     )
                     drawLine(
-                        color = Color(0xFF757575),
+                        color = ColorCellMark,
                         start = Offset((c + 1) * cellPx - pad, r * cellPx + pad),
                         end = Offset(c * cellPx + pad, (r + 1) * cellPx - pad),
                         strokeWidth = strokeW
@@ -397,7 +389,7 @@ fun GameGrid(
                     val rightRegion = level.regionGrid[r][c + 1]
                     val isBoundary = rightRegion != regionId
                     drawLine(
-                        color = if (isBoundary) COLOR_GRID_LINE_THICK else COLOR_GRID_LINE_THIN,
+                        color = if (isBoundary) ColorGridLineThick else ColorGridLineThin,
                         start = Offset((c + 1) * cellPx, r * cellPx),
                         end = Offset((c + 1) * cellPx, (r + 1) * cellPx),
                         strokeWidth = if (isBoundary) 4f else 1.5f
@@ -409,7 +401,7 @@ fun GameGrid(
                     val bottomRegion = level.regionGrid[r + 1][c]
                     val isBoundary = bottomRegion != regionId
                     drawLine(
-                        color = if (isBoundary) COLOR_GRID_LINE_THICK else COLOR_GRID_LINE_THIN,
+                        color = if (isBoundary) ColorGridLineThick else ColorGridLineThin,
                         start = Offset(c * cellPx, (r + 1) * cellPx),
                         end = Offset((c + 1) * cellPx, (r + 1) * cellPx),
                         strokeWidth = if (isBoundary) 4f else 1.5f
@@ -420,7 +412,7 @@ fun GameGrid(
 
         // Outer border
         drawRect(
-            color = COLOR_GRID_LINE_THICK,
+            color = ColorGridLineThick,
             topLeft = Offset(0f, 0f),
             size = Size(gridSize * cellPx, gridSize * cellPx),
             style = Stroke(width = 4f)

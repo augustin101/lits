@@ -21,9 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.lits.R
 
 @Composable
 fun SettingsScreen(
@@ -46,10 +48,10 @@ fun SettingsScreen(
             modifier = Modifier.padding(top = 8.dp)
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(28.dp))
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), modifier = Modifier.size(28.dp))
             }
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings_title),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -69,12 +71,12 @@ fun SettingsScreen(
         ) {
             Column {
                 Text(
-                    text = "Haptic feedback",
+                    text = stringResource(R.string.setting_haptic_title),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Vibrate when shading a cell",
+                    text = stringResource(R.string.setting_haptic_desc),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -96,12 +98,12 @@ fun SettingsScreen(
         ) {
             Column {
                 Text(
-                    text = "Two-tap mode",
+                    text = stringResource(R.string.setting_two_tap_title),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Tap to shade/unshade, long press to mark",
+                    text = stringResource(R.string.setting_two_tap_desc),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -123,12 +125,12 @@ fun SettingsScreen(
         ) {
             Column {
                 Text(
-                    text = "Zen mode",
+                    text = stringResource(R.string.setting_zen_title),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Hide title, timer and status info in game",
+                    text = stringResource(R.string.setting_zen_desc),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

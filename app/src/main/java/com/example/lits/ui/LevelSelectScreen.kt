@@ -26,13 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private val COLOR_COMPLETED = Color(0xFF4CAF50)
-private val COLOR_STARTED   = Color(0xFFFF9800)
-private val COLOR_INCOMPLETE = Color(0xFFEEEEEE)
+import com.example.lits.R
 
 @Composable
 fun LevelSelectScreen(
@@ -55,10 +53,10 @@ fun LevelSelectScreen(
             modifier = Modifier.padding(top = 8.dp)
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(28.dp))
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), modifier = Modifier.size(28.dp))
             }
             Text(
-                text = "${gridSize}×${gridSize}  —  Levels",
+                text = stringResource(R.string.level_select_title, gridSize),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -94,11 +92,11 @@ private fun LevelCell(
     onClick: () -> Unit
 ) {
     val containerColor = when {
-        completed -> COLOR_COMPLETED
-        started   -> COLOR_STARTED
-        else      -> COLOR_INCOMPLETE
+        completed -> ColorTileCompleted
+        started   -> ColorTileStarted
+        else      -> ColorTileIncomplete
     }
-    val contentColor = if (completed || started) Color.White else Color(0xFF424242)
+    val contentColor = if (completed || started) Color.White else ColorTileContentOnEmpty
     Card(
         onClick = onClick,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
