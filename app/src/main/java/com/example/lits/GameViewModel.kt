@@ -34,6 +34,9 @@ class GameViewModel(
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
     init {
+        check(level.size < 17) {
+            "Grid size ${level.size} exceeds the maximum of 16 for 2-bit-per-cell UInt32 row encoding"
+        }
         // Restore in-progress state asynchronously.
         // The grid shows empty briefly (typically < 100ms) before the saved state loads.
         viewModelScope.launch {
@@ -112,17 +115,29 @@ class GameViewModel(
         }
     }
 
+    // Each row is packed into one UInt32 using 2 bits per cell (max 16 cells = 32 bits).
+    // CellState ordinals: 0=EMPTY, 1=SHADED, 2=MARKED.
+    // Cell 0 occupies the most-significant pair of bits; cell[size-1] the least-significant.
+    // Stored as a hex string: 8 chars per row, rows concatenated.
+
     private fun List<List<CellState>>.encode(): String =
-        flatten().joinToString("") { it.ordinal.toString() }
+        joinToString("") { row ->
+            row.fold(0u) { acc, cell -> (acc shl 2) or cell.ordinal.toUInt() }
+                .toString(16)
+                .padStart(8, '0')
+        }
 
     private fun String.decodeCellStates(size: Int): List<List<CellState>>? {
-        if (length != size * size) return null
+        if (length != size * 8) return null
         val values = CellState.values()
-        return chunked(size).map { row ->
-            row.map { ch ->
-                val ord = ch.digitToIntOrNull() ?: return null
-                values.getOrNull(ord) ?: return null
+        return chunked(8).map { chunk ->
+            var packed = chunk.toUIntOrNull(16) ?: return null
+            val row = MutableList(size) { CellState.EMPTY }
+            for (i in size - 1 downTo 0) {
+                row[i] = values.getOrNull((packed and 0b11u).toInt()) ?: return null
+                packed = packed shr 2
             }
+            row.toList()
         }
     }
 }
