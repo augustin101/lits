@@ -3,44 +3,41 @@ package com.example.lits.data
 import android.util.Log
 import com.example.lits.logic.Level
 import com.example.lits.logic.LevelSchemaValidator
-import org.json.JSONObject
+import kotlin.math.sqrt
 
 /**
- * Parses a single-level JSON file into a [Level].
+ * Parses a compact level string into a [Level].
  *
- * Expected format:
- * ```json
- * {
- *   "grid": [[0,1,1,2], [0,0,1,2], ...]
- * }
- * ```
- * `size` and `regionCount` are derived from the grid.
- * Returns null and logs a warning if schema validation fails.
+ * Format: a flat string of lowercase letters (a–z), read row-by-row left-to-right.
+ * Each character maps to a region ID: 'a' → 0, 'b' → 1, …, 'z' → 25.
+ * The grid size is derived from sqrt(length) — files must be square.
+ *
+ * Example 5×5 (25 chars): "aaabbaacbbddccbddccedeeee"
  */
 object LevelParser {
 
     private const val TAG = "LevelParser"
 
-    fun parseSingle(json: String): Level? {
-        val obj = JSONObject(json)
-        val gridArray = obj.getJSONArray("grid")
-
-        if (gridArray.length() == 0) {
-            Log.w(TAG, "Empty grid")
+    fun parseString(content: String, size: Int): Level? {
+        val s = content.trim()
+        if (s.length != size * size) {
+            Log.w(TAG, "Expected ${size * size} chars for ${size}×${size}, got ${s.length}")
+            return null
+        }
+        if (s.any { it !in 'a'..'z' }) {
+            Log.w(TAG, "Level string contains invalid characters (only a–z allowed)")
             return null
         }
 
-        val regionGrid = (0 until gridArray.length()).map { r ->
-            val row = gridArray.getJSONArray(r)
-            (0 until row.length()).map { c -> row.getInt(c) }
+        val regionGrid = (0 until size).map { r ->
+            (0 until size).map { c -> s[r * size + c] - 'a' }
         }
-
         val regionCount = (regionGrid.flatten().maxOrNull() ?: run {
             Log.w(TAG, "Could not determine regionCount")
             return null
         }) + 1
 
-        val level = Level(regionGrid.size, regionGrid, regionCount)
+        val level = Level(size, regionGrid, regionCount)
         val validation = LevelSchemaValidator.validate(level)
         if (!validation.isValid) {
             Log.w(TAG, "Level failed schema validation:")

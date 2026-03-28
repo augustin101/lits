@@ -36,11 +36,11 @@ class LevelRepositoryImpl(private val context: Context) : LevelRepository {
 
     private fun loadLevel(size: Int, index: Int): Level? {
         return try {
-            val json = context.assets
-                .open("levels/$size/$index.json")
+            val content = context.assets
+                .open("levels/$size/$index.txt")
                 .bufferedReader()
                 .readText()
-            LevelParser.parseSingle(json)
+            LevelParser.parseString(content, size)
         } catch (e: Exception) {
             Log.w("LevelRepository", "Failed to load level size=$size index=$index: ${e.message}")
             null

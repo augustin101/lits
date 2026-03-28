@@ -3,21 +3,24 @@
 LITS level generator / validator.
 
 Workflow:
-  1. Define your levels in the LEVELS_* lists below (one LevelData per puzzle).
+  1. Define your levels in the LEVELS_* lists below using compact strings.
   2. Run `python tools/generate_levels.py` to validate all levels.
   3. Run `python tools/generate_levels.py --write` to write valid levels to assets/.
 
-The script writes one JSON file per grid size:
-  app/src/main/assets/levels_5.json
-  app/src/main/assets/levels_6.json
-  ...
+Level string format:
+  A flat string of lowercase letters (a–z), read row-by-row left-to-right.
+  Each character is a region ID: 'a' → 0, 'b' → 1, …, 'z' → 25.
+  The grid size is derived from sqrt(len(string)).
+
+  Example 5×5:  "aaabbaacbbddccbddccedeeee"
+  Example 6×6:  "aaccddaccdddafeeedaffeeebfffeebbbffe"
 """
 
-import json
 import os
 import sys
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from math import isqrt
 
 # Resolve paths relative to project root (parent of tools/)
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,24 +34,26 @@ LEVELS_DIR = os.path.join(_PROJECT_ROOT, "app", "src", "main", "assets", "levels
 @dataclass
 class LevelData:
     """
-    A single LITS level.
+    A single LITS level, stored as a compact flat string.
 
-    grid: list of rows, each row a list of region IDs (0-based integers).
-    Rules:
-      - IDs must be consecutive starting from 0 (no gaps).
-      - Every region must contain exactly 4 cells.
-      - An N×N grid must have exactly N*N/4 regions.
+    Each character is a region ID: 'a' → 0, 'b' → 1, …, 'z' → 25.
+    The string is read row-by-row left-to-right; size = sqrt(len(s)).
     """
-    grid: list[list[int]]
+    s: str
 
     @property
     def size(self) -> int:
-        return len(self.grid)
+        return isqrt(len(self.s))
+
+    @property
+    def grid(self) -> list[list[int]]:
+        n = self.size
+        ids = [ord(c) - ord('a') for c in self.s]
+        return [ids[r * n:(r + 1) * n] for r in range(n)]
 
     @property
     def region_count(self) -> int:
-        flat = [c for row in self.grid for c in row]
-        return max(flat) + 1 if flat else 0
+        return max(ord(c) - ord('a') for c in self.s) + 1 if self.s else 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,38 +63,38 @@ class LevelData:
 def validate_level(level: LevelData) -> list[str]:
     """Returns a list of error strings. An empty list means the level is valid."""
     errors: list[str] = []
-    size = level.size
 
-    if size == 0:
-        return ["Grid is empty"]
+    if not level.s:
+        return ["Level string is empty"]
 
-    # Square
-    for i, row in enumerate(level.grid):
-        if len(row) != size:
-            errors.append(f"Row {i} has {len(row)} cells, expected {size}")
-
-    if errors:
+    # Must be a-z only
+    bad = {c for c in level.s if c not in 'abcdefghijklmnopqrstuvwxyz'}
+    if bad:
+        errors.append(f"Invalid characters: {sorted(bad)}")
         return errors
 
-    flat = [c for row in level.grid for c in row]
+    n = isqrt(len(level.s))
+    if n * n != len(level.s):
+        errors.append(f"String length {len(level.s)} is not a perfect square")
+        return errors
+
+    flat = [ord(c) - ord('a') for c in level.s]
     region_count = level.region_count
 
-    # Valid range
-    out_of_range = {v for v in flat if v < 0 or v >= region_count}
-    if out_of_range:
-        errors.append(f"IDs out of range [0, {region_count}): {sorted(out_of_range)}")
-
-    # No gaps
+    # No gaps in region IDs
     used = set(flat)
     missing = [i for i in range(region_count) if i not in used]
     if missing:
-        errors.append(f"IDs {missing} never appear (gap in sequence)")
+        errors.append(f"Region IDs {missing} never appear (gap in sequence)")
 
-    # Each region must have at least 4 cells (player needs to pick 4 to shade)
+    # Each region must have at least 4 cells
     counts = Counter(flat)
     for region_id, count in sorted(counts.items()):
         if count < 4:
-            errors.append(f"Region {region_id}: only {count} cells (need at least 4)")
+            errors.append(
+                f"Region '{chr(ord('a') + region_id)}' ({region_id}): "
+                f"only {count} cells (need at least 4)"
+            )
 
     return errors
 
@@ -98,11 +103,6 @@ def validate_level(level: LevelData) -> list[str]:
 # I/O helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _level_to_dict(level: LevelData) -> dict:
-    # Note: add "solution" key here once hint support is implemented.
-    return {"grid": level.grid}
-
-
 def load_levels(size: int) -> list[LevelData]:
     """Load existing levels from assets/levels/<size>/."""
     folder = os.path.join(LEVELS_DIR, str(size))
@@ -110,22 +110,21 @@ def load_levels(size: int) -> list[LevelData]:
         return []
     levels = []
     for filename in sorted(os.listdir(folder)):
-        if not filename.endswith(".json"):
+        if not filename.endswith(".txt"):
             continue
         with open(os.path.join(folder, filename)) as f:
-            data = json.load(f)
-        levels.append(LevelData(grid=data["grid"]))
+            levels.append(LevelData(s=f.read().strip()))
     return levels
 
 
 def save_levels(size: int, levels: list[LevelData]) -> None:
-    """Write each level to assets/levels/<size>/<index>.json (0-based index)."""
+    """Write each level to assets/levels/<size>/<index>.txt (0-based index)."""
     folder = os.path.join(LEVELS_DIR, str(size))
     os.makedirs(folder, exist_ok=True)
     for index, level in enumerate(levels):
-        path = os.path.join(folder, f"{index}.json")
+        path = os.path.join(folder, f"{index}.txt")
         with open(path, "w") as f:
-            json.dump(_level_to_dict(level), f, indent=2)
+            f.write(level.s)
     print(f"  Wrote {len(levels)} level(s) → assets/levels/{size}/")
 
 
@@ -154,55 +153,32 @@ def validate_and_report(size: int, levels: list[LevelData]) -> bool:
 
 LEVELS_5: list[LevelData] = [
     # Level 1
-    LevelData(grid=[
-        [0, 0, 0, 1, 1],
-        [0, 0, 2, 1, 1],
-        [3, 3, 2, 2, 1],
-        [3, 3, 2, 2, 4],
-        [3, 4, 4, 4, 4],
-    ]),
+    LevelData("aaabbaacbbddccbddccedeeee"),
     # Add more 5×5 levels here:
-    # LevelData(grid=[...]),
+    # LevelData("..."),
 ]
 
 LEVELS_6: list[LevelData] = [
     # Level 1
-    LevelData(grid=[
-        [0, 0, 2, 2, 3, 3],
-        [0, 2, 2, 3, 3, 3],
-        [0, 5, 4, 4, 4, 3],
-        [0, 5, 5, 4, 4, 4],
-        [1, 5, 5, 5, 4, 4],
-        [1, 1, 1, 5, 5, 4],
-    ]),
+    LevelData("aaccddaccdddafeeedaffeeebfffeebbbffe"),
     # Add more 6×6 levels here:
-    # LevelData(grid=[...]),
-]
-
-LEVELS_7: list[LevelData] = [
-    # A 7×7 grid needs ... wait, 49 cells / 4 = 12.25 — not divisible!
-    # 7×7 is not a valid LITS grid size (cells must be divisible by 4).
-    # The validator will catch this if you try.
+    # LevelData("..."),
 ]
 
 LEVELS_8: list[LevelData] = [
     # An 8×8 grid needs 16 regions of 4 cells each.
-]
-
-LEVELS_9: list[LevelData] = [
-    # 9×9: 81 cells / 4 = 20.25 — not divisible. Not a valid LITS size.
+    # LevelData("..."),  # 64 chars
 ]
 
 LEVELS_10: list[LevelData] = [
     # A 10×10 grid needs 25 regions of 4 cells each.
+    # LevelData("..."),  # 100 chars
 ]
 
 ALL_LEVELS: dict[int, list[LevelData]] = {
     5:  LEVELS_5,
     6:  LEVELS_6,
-    7:  LEVELS_7,
     8:  LEVELS_8,
-    9:  LEVELS_9,
     10: LEVELS_10,
 }
 
