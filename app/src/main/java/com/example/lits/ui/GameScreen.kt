@@ -77,12 +77,13 @@ fun GameScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 16.dp),
     ) {
+        // Header pinned to the top, matching other screens
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
@@ -96,52 +97,61 @@ fun GameScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        // Game content centered in the remaining space
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Spacer(modifier = Modifier.height(4.dp))
 
-        if (gameState.validationResult.isSolved) {
-            Surface(
-                color = Color(0xFF4CAF50),
-                shape = RoundedCornerShape(8.dp)
+            if (gameState.validationResult.isSolved) {
+                Surface(
+                    color = Color(0xFF4CAF50),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "SOLVED!",
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .padding(8.dp)
             ) {
-                Text(
-                    text = "SOLVED!",
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                GameGrid(
+                    gameState = gameState,
+                    hapticEnabled = hapticEnabled,
+                    twoTapMode = twoTapMode,
+                    onSetCellState = viewModel::setCellState
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            StatusRow(gameState = gameState)
+
             Spacer(modifier = Modifier.height(12.dp))
-        }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .padding(8.dp)
-        ) {
-            GameGrid(
-                gameState = gameState,
-                hapticEnabled = hapticEnabled,
-                twoTapMode = twoTapMode,
-                onSetCellState = viewModel::setCellState
-            )
-        }
+            Button(onClick = { viewModel.resetGame() }) {
+                Text("Reset")
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        StatusRow(gameState = gameState)
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(onClick = { viewModel.resetGame() }) {
-            Text("Reset")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Legend()
-    }
+            Legend()
+        }   // inner Column
+    }       // outer Column
 }
 
 @Composable

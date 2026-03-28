@@ -39,13 +39,13 @@ fun WelcomeScreen(
             onClick = onSettingsClick,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(8.dp)
+                .padding(top = 8.dp, start = 4.dp)
                 .size(48.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Settings,
                 contentDescription = "Settings",
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(36.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
