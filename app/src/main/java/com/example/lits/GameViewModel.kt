@@ -26,16 +26,10 @@ class GameViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
         )
     }
 
-    fun onCellTap(row: Int, col: Int) {
+    fun setCellState(row: Int, col: Int, state: CellState) {
         val current = _gameState.value
-        val currentState = current.cellStates[row][col]
-        val nextState = when (currentState) {
-            CellState.EMPTY -> CellState.SHADED
-            CellState.SHADED -> CellState.MARKED
-            CellState.MARKED -> CellState.EMPTY
-        }
         val newCellStates = current.cellStates.toMutableList().also { rows ->
-            rows[row] = rows[row].toMutableList().also { it[col] = nextState }
+            rows[row] = rows[row].toMutableList().also { it[col] = state }
         }
         _gameState.value = GameState(
             level = level,

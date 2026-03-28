@@ -1,16 +1,29 @@
 package com.example.lits
 
-import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.lits.data.SettingsStore
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class SettingsViewModel : ViewModel() {
+class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val _hapticEnabled = MutableStateFlow(true)
-    val hapticEnabled: StateFlow<Boolean> = _hapticEnabled.asStateFlow()
+    private val store = SettingsStore(app)
+
+    val hapticEnabled: StateFlow<Boolean> = store.hapticEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initialValue = true)
+
+    val twoTapMode: StateFlow<Boolean> = store.twoTapMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initialValue = false)
 
     fun setHapticEnabled(enabled: Boolean) {
-        _hapticEnabled.value = enabled
+        viewModelScope.launch { store.setHapticEnabled(enabled) }
+    }
+
+    fun setTwoTapMode(enabled: Boolean) {
+        viewModelScope.launch { store.setTwoTapMode(enabled) }
     }
 }

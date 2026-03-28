@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -21,6 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,9 +34,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,6 +61,7 @@ private val COLOR_GRID_LINE_THICK = Color(0xFF212121)
 @Composable
 fun GameScreen(
     hapticEnabled: Boolean = true,
+    twoTapMode: Boolean = false,
     onBack: () -> Unit = {},
     viewModel: GameViewModel = viewModel()
 ) {
@@ -64,6 +70,7 @@ fun GameScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -72,8 +79,8 @@ fun GameScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            androidx.compose.material3.TextButton(onClick = onBack) {
-                Text("← Back")
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
             Text(
                 text = "LITS  ${gameState.level.size}×${gameState.level.size}",
@@ -107,7 +114,12 @@ fun GameScreen(
                 .aspectRatio(1f)
                 .padding(8.dp)
         ) {
-            GameGrid(gameState = gameState, hapticEnabled = hapticEnabled, onCellTap = viewModel::onCellTap)
+            GameGrid(
+                gameState = gameState,
+                hapticEnabled = hapticEnabled,
+                twoTapMode = twoTapMode,
+                onSetCellState = viewModel::setCellState
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -181,27 +193,57 @@ private fun LegendItem(label: String, color: Color) {
 fun GameGrid(
     gameState: GameState,
     hapticEnabled: Boolean = true,
-    onCellTap: (row: Int, col: Int) -> Unit
+    twoTapMode: Boolean = false,
+    onSetCellState: (row: Int, col: Int, state: CellState) -> Unit
 ) {
     val level = gameState.level
     val gridSize = level.size
-    val haptic = LocalHapticFeedback.current
+    val view = LocalView.current
     val currentCellStates = rememberUpdatedState(gameState.cellStates)
+    val currentTwoTapMode = rememberUpdatedState(twoTapMode)
+    val currentHapticEnabled = rememberUpdatedState(hapticEnabled)
+
+    fun vibrate() {
+        if (currentHapticEnabled.value) {
+            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+    }
 
     Canvas(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    // 'size' here is PointerInputScope.size (IntSize), gridSize is level.size (Int)
-                    val cellPx = size.width.toFloat() / gridSize
-                    val col = (offset.x / cellPx).toInt().coerceIn(0, gridSize - 1)
-                    val row = (offset.y / cellPx).toInt().coerceIn(0, gridSize - 1)
-                    if (hapticEnabled && currentCellStates.value[row][col] == CellState.EMPTY) {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                detectTapGestures(
+                    onTap = { offset ->
+                        val cellPx = size.width.toFloat() / gridSize
+                        val col = (offset.x / cellPx).toInt().coerceIn(0, gridSize - 1)
+                        val row = (offset.y / cellPx).toInt().coerceIn(0, gridSize - 1)
+                        val current = currentCellStates.value[row][col]
+                        val next = if (currentTwoTapMode.value) {
+                            when (current) {
+                                CellState.EMPTY -> CellState.SHADED
+                                CellState.SHADED -> CellState.EMPTY
+                                CellState.MARKED -> CellState.EMPTY
+                            }
+                        } else {
+                            when (current) {
+                                CellState.EMPTY -> CellState.SHADED
+                                CellState.SHADED -> CellState.MARKED
+                                CellState.MARKED -> CellState.EMPTY
+                            }
+                        }
+                        vibrate()
+                        onSetCellState(row, col, next)
+                    },
+                    onLongPress = { offset ->
+                        if (!currentTwoTapMode.value) return@detectTapGestures
+                        val cellPx = size.width.toFloat() / gridSize
+                        val col = (offset.x / cellPx).toInt().coerceIn(0, gridSize - 1)
+                        val row = (offset.y / cellPx).toInt().coerceIn(0, gridSize - 1)
+                        vibrate()
+                        onSetCellState(row, col, CellState.MARKED)
                     }
-                    onCellTap(row, col)
-                }
+                )
             }
     ) {
         // 'size' is DrawScope.size (Size, floats). Use gridSize for loop bounds.

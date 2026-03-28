@@ -29,16 +29,21 @@ fun AppNavigation() {
             arguments = listOf(navArgument("gridSize") { type = NavType.IntType })
         ) {
             val hapticEnabled by settingsViewModel.hapticEnabled.collectAsState()
+            val twoTapMode by settingsViewModel.twoTapMode.collectAsState()
             GameScreen(
                 hapticEnabled = hapticEnabled,
+                twoTapMode = twoTapMode,
                 onBack = { navController.popBackStack() }
             )
         }
         composable("settings") {
             val hapticEnabled by settingsViewModel.hapticEnabled.collectAsState()
+            val twoTapMode by settingsViewModel.twoTapMode.collectAsState()
             SettingsScreen(
                 hapticEnabled = hapticEnabled,
                 onHapticToggle = settingsViewModel::setHapticEnabled,
+                twoTapMode = twoTapMode,
+                onTwoTapModeToggle = settingsViewModel::setTwoTapMode,
                 onBack = { navController.popBackStack() }
             )
         }
