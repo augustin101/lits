@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.material.icons.Icons
@@ -63,9 +64,14 @@ fun GameScreen(
     hapticEnabled: Boolean = true,
     twoTapMode: Boolean = false,
     onBack: () -> Unit = {},
+    onLevelSolved: () -> Unit = {},
     viewModel: GameViewModel = viewModel()
 ) {
     val gameState by viewModel.gameState.collectAsState()
+
+    LaunchedEffect(gameState.validationResult.isSolved) {
+        if (gameState.validationResult.isSolved) onLevelSolved()
+    }
 
     Column(
         modifier = Modifier
@@ -83,7 +89,7 @@ fun GameScreen(
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
             Text(
-                text = "LITS  ${gameState.level.size}×${gameState.level.size}",
+                text = "${gameState.level.size}×${gameState.level.size}  —  Level ${viewModel.levelIndex + 1}",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

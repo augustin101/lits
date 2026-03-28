@@ -31,7 +31,7 @@ private val GRID_SIZES = listOf(5, 6, 7, 8, 9, 10)
 
 @Composable
 fun WelcomeScreen(
-    onLevelSelected: (gridSize: Int) -> Unit,
+    onSizeSelected: (gridSize: Int) -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
@@ -89,7 +89,7 @@ fun WelcomeScreen(
                     LevelCard(
                         size = size,
                         modifier = Modifier.weight(1f),
-                        onClick = { onLevelSelected(size) }
+                        onClick = { onSizeSelected(size) }
                     )
                 }
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))

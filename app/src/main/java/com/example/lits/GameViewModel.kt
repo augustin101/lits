@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class GameViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
-    private val level = Levels.getLevel(savedStateHandle.get<Int>("gridSize") ?: 5)
+    val gridSize: Int = savedStateHandle.get<Int>("gridSize") ?: 5
+    val levelIndex: Int = savedStateHandle.get<Int>("levelIndex") ?: 0
+    private val level = Levels.getLevel(gridSize, levelIndex)
 
     private val _gameState = MutableStateFlow(createInitialState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()

@@ -9,31 +9,54 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.lits.ProgressViewModel
 import com.example.lits.SettingsViewModel
+import com.example.lits.logic.Levels
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    // SettingsViewModel is created here so it's shared across all destinations
     val settingsViewModel: SettingsViewModel = viewModel()
+    val progressViewModel: ProgressViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "welcome") {
         composable("welcome") {
             WelcomeScreen(
-                onLevelSelected = { size -> navController.navigate("game/$size") },
+                onSizeSelected = { size -> navController.navigate("levels/$size") },
                 onSettingsClick = { navController.navigate("settings") }
             )
         }
         composable(
-            route = "game/{gridSize}",
+            route = "levels/{gridSize}",
             arguments = listOf(navArgument("gridSize") { type = NavType.IntType })
-        ) {
+        ) { backStackEntry ->
+            val gridSize = backStackEntry.arguments?.getInt("gridSize") ?: 5
+            val completedLevels by progressViewModel.completedLevels(gridSize)
+                .collectAsState(initial = emptySet())
+            LevelSelectScreen(
+                gridSize = gridSize,
+                levelCount = Levels.getLevelCount(gridSize),
+                completedLevels = completedLevels,
+                onLevelSelected = { index -> navController.navigate("game/$gridSize/$index") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "game/{gridSize}/{levelIndex}",
+            arguments = listOf(
+                navArgument("gridSize") { type = NavType.IntType },
+                navArgument("levelIndex") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val gridSize = backStackEntry.arguments?.getInt("gridSize") ?: 5
+            val levelIndex = backStackEntry.arguments?.getInt("levelIndex") ?: 0
             val hapticEnabled by settingsViewModel.hapticEnabled.collectAsState()
             val twoTapMode by settingsViewModel.twoTapMode.collectAsState()
             GameScreen(
                 hapticEnabled = hapticEnabled,
                 twoTapMode = twoTapMode,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onLevelSolved = { progressViewModel.markCompleted(gridSize, levelIndex) }
             )
         }
         composable("settings") {

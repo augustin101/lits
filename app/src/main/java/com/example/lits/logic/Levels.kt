@@ -23,8 +23,13 @@ object Levels {
         regionCount = 5
     )
 
-    fun getLevel(size: Int): Level = when (size) {
-        5 -> level1
+    fun getLevelCount(size: Int): Int = when (size) {
+        5 -> 5
+        else -> 5
+    }
+
+    fun getLevel(size: Int, index: Int = 0): Level = when {
+        size == 5 && index == 0 -> level1
         else -> generatePlaceholderLevel(size)
     }
 
