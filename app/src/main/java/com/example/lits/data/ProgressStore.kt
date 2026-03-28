@@ -37,6 +37,19 @@ class ProgressStore(private val context: Context) {
     private fun stateKey(gridSize: Int, levelIndex: Int) =
         stringPreferencesKey("state_${gridSize}_${levelIndex}")
 
+    fun startedLevels(gridSize: Int): Flow<Set<Int>> =
+        context.progressDataStore.data.map { prefs ->
+            prefs.asMap()
+                .entries
+                .filter { (key, value) ->
+                    key.name.startsWith("state_${gridSize}_") && (value as? String)?.isNotEmpty() == true
+                }
+                .mapNotNull { (key, _) ->
+                    key.name.removePrefix("state_${gridSize}_").toIntOrNull()
+                }
+                .toSet()
+        }
+
     fun savedCellStates(gridSize: Int, levelIndex: Int): Flow<String?> =
         context.progressDataStore.data.map { prefs ->
             prefs[stateKey(gridSize, levelIndex)]

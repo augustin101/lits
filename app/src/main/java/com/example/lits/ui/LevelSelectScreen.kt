@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val COLOR_COMPLETED = Color(0xFF4CAF50)
+private val COLOR_STARTED   = Color(0xFFFF9800)
 private val COLOR_INCOMPLETE = Color(0xFFEEEEEE)
 
 @Composable
@@ -37,6 +38,7 @@ fun LevelSelectScreen(
     gridSize: Int,
     levelCount: Int,
     completedLevels: Set<Int>,
+    startedLevels: Set<Int>,
     onLevelSelected: (levelIndex: Int) -> Unit,
     onBack: () -> Unit
 ) {
@@ -72,6 +74,7 @@ fun LevelSelectScreen(
                 LevelCell(
                     number = index + 1,
                     completed = index in completedLevels,
+                    started = index in startedLevels,
                     onClick = { onLevelSelected(index) }
                 )
             }
@@ -80,13 +83,16 @@ fun LevelSelectScreen(
 }
 
 @Composable
-private fun LevelCell(number: Int, completed: Boolean, onClick: () -> Unit) {
+private fun LevelCell(number: Int, completed: Boolean, started: Boolean, onClick: () -> Unit) {
+    val containerColor = when {
+        completed -> COLOR_COMPLETED
+        started   -> COLOR_STARTED
+        else      -> COLOR_INCOMPLETE
+    }
     Card(
         onClick = onClick,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (completed) COLOR_COMPLETED else COLOR_INCOMPLETE
-        ),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Box(
@@ -99,7 +105,7 @@ private fun LevelCell(number: Int, completed: Boolean, onClick: () -> Unit) {
                 text = "$number",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (completed) Color.White else Color(0xFF424242)
+                color = if (completed || started) Color.White else Color(0xFF424242)
             )
         }
     }

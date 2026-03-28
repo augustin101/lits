@@ -12,6 +12,7 @@ class ProgressViewModel(app: Application) : AndroidViewModel(app) {
     private val store = ProgressStore(app)
 
     fun completedLevels(gridSize: Int): Flow<Set<Int>> = store.completedLevels(gridSize)
+    fun startedLevels(gridSize: Int): Flow<Set<Int>> = store.startedLevels(gridSize)
 
     fun markCompleted(gridSize: Int, levelIndex: Int) {
         viewModelScope.launch { store.markCompleted(gridSize, levelIndex) }

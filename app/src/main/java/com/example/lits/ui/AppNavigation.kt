@@ -36,10 +36,13 @@ fun AppNavigation() {
             val gridSize = backStackEntry.arguments?.getInt("gridSize") ?: 5
             val completedLevels by progressViewModel.completedLevels(gridSize)
                 .collectAsState(initial = emptySet())
+            val startedLevels by progressViewModel.startedLevels(gridSize)
+                .collectAsState(initial = emptySet())
             LevelSelectScreen(
                 gridSize = gridSize,
                 levelCount = levelRepository.getLevelCount(gridSize),
                 completedLevels = completedLevels,
+                startedLevels = startedLevels,
                 onLevelSelected = { index -> navController.navigate("game/$gridSize/$index") },
                 onBack = { navController.popBackStack() }
             )
