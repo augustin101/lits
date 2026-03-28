@@ -2,6 +2,7 @@ package com.example.lits.data
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -11,17 +12,45 @@ val Context.progressDataStore by preferencesDataStore(name = "progress")
 
 class ProgressStore(private val context: Context) {
 
-    private fun key(gridSize: Int) = stringSetPreferencesKey("completed_$gridSize")
+    // ── Level completion ──────────────────────────────────────────────────────
+
+    private fun completedKey(gridSize: Int) = stringSetPreferencesKey("completed_$gridSize")
 
     fun completedLevels(gridSize: Int): Flow<Set<Int>> =
         context.progressDataStore.data.map { prefs ->
-            prefs[key(gridSize)]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: emptySet()
+            prefs[completedKey(gridSize)]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: emptySet()
         }
 
     suspend fun markCompleted(gridSize: Int, levelIndex: Int) {
         context.progressDataStore.edit { prefs ->
-            val current = prefs[key(gridSize)] ?: emptySet()
-            prefs[key(gridSize)] = current + levelIndex.toString()
+            val current = prefs[completedKey(gridSize)] ?: emptySet()
+            prefs[completedKey(gridSize)] = current + levelIndex.toString()
+        }
+    }
+
+    // ── In-progress cell states ───────────────────────────────────────────────
+    //
+    // Cell states are serialized as a flat string of digits, one per cell:
+    //   '0' = EMPTY, '1' = SHADED, '2' = MARKED
+    // A 10×10 grid produces a 100-character string.
+
+    private fun stateKey(gridSize: Int, levelIndex: Int) =
+        stringPreferencesKey("state_${gridSize}_${levelIndex}")
+
+    fun savedCellStates(gridSize: Int, levelIndex: Int): Flow<String?> =
+        context.progressDataStore.data.map { prefs ->
+            prefs[stateKey(gridSize, levelIndex)]
+        }
+
+    suspend fun saveCellStates(gridSize: Int, levelIndex: Int, encoded: String) {
+        context.progressDataStore.edit { prefs ->
+            prefs[stateKey(gridSize, levelIndex)] = encoded
+        }
+    }
+
+    suspend fun clearCellStates(gridSize: Int, levelIndex: Int) {
+        context.progressDataStore.edit { prefs ->
+            prefs.remove(stateKey(gridSize, levelIndex))
         }
     }
 }
