@@ -14,6 +14,7 @@ val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(na
 object SettingsKeys {
     val HAPTIC_ENABLED = booleanPreferencesKey("haptic_enabled")
     val TWO_TAP_MODE = booleanPreferencesKey("two_tap_mode")
+    val ZEN_MODE = booleanPreferencesKey("zen_mode")
 }
 
 class SettingsStore(private val context: Context) {
@@ -24,6 +25,9 @@ class SettingsStore(private val context: Context) {
     val twoTapMode: Flow<Boolean> = context.settingsDataStore.data
         .map { prefs -> prefs[SettingsKeys.TWO_TAP_MODE] ?: false }
 
+    val zenMode: Flow<Boolean> = context.settingsDataStore.data
+        .map { prefs -> prefs[SettingsKeys.ZEN_MODE] ?: false }
+
     suspend fun setHapticEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.HAPTIC_ENABLED] = enabled
@@ -33,6 +37,12 @@ class SettingsStore(private val context: Context) {
     suspend fun setTwoTapMode(enabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.TWO_TAP_MODE] = enabled
+        }
+    }
+
+    suspend fun setZenMode(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.ZEN_MODE] = enabled
         }
     }
 }

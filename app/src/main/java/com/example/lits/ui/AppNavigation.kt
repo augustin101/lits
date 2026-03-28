@@ -61,9 +61,11 @@ fun AppNavigation() {
             val levelIndex = backStackEntry.arguments?.getInt("levelIndex") ?: 0
             val hapticEnabled by settingsViewModel.hapticEnabled.collectAsState()
             val twoTapMode by settingsViewModel.twoTapMode.collectAsState()
+            val zenMode by settingsViewModel.zenMode.collectAsState()
             GameScreen(
                 hapticEnabled = hapticEnabled,
                 twoTapMode = twoTapMode,
+                zenMode = zenMode,
                 onBack = { navController.popBackStack() },
                 onLevelSolved = { progressViewModel.markCompleted(gridSize, levelIndex) }
             )
@@ -71,11 +73,14 @@ fun AppNavigation() {
         composable("settings") {
             val hapticEnabled by settingsViewModel.hapticEnabled.collectAsState()
             val twoTapMode by settingsViewModel.twoTapMode.collectAsState()
+            val zenMode by settingsViewModel.zenMode.collectAsState()
             SettingsScreen(
                 hapticEnabled = hapticEnabled,
                 onHapticToggle = settingsViewModel::setHapticEnabled,
                 twoTapMode = twoTapMode,
                 onTwoTapModeToggle = settingsViewModel::setTwoTapMode,
+                zenMode = zenMode,
+                onZenModeToggle = settingsViewModel::setZenMode,
                 onBack = { navController.popBackStack() }
             )
         }

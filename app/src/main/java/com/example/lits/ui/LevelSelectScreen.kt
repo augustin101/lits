@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -54,7 +55,7 @@ fun LevelSelectScreen(
             modifier = Modifier.padding(top = 8.dp)
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(28.dp))
             }
             Text(
                 text = "${gridSize}×${gridSize}  —  Levels",
@@ -67,7 +68,7 @@ fun LevelSelectScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
+            columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -113,7 +114,7 @@ private fun LevelCell(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "$number",
-                    fontSize = 18.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = contentColor
                 )

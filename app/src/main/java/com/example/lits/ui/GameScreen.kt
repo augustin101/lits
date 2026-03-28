@@ -69,6 +69,7 @@ private val COLOR_GRID_LINE_THICK = Color(0xFF212121)
 fun GameScreen(
     hapticEnabled: Boolean = true,
     twoTapMode: Boolean = false,
+    zenMode: Boolean = false,
     onBack: () -> Unit = {},
     onLevelSolved: () -> Unit = {},
     viewModel: GameViewModel = viewModel()
@@ -108,7 +109,7 @@ fun GameScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(28.dp))
             }
             Text(
                 text = "${gameState.level.size}×${gameState.level.size}  —  Level ${viewModel.levelIndex + 1}",
@@ -126,7 +127,7 @@ fun GameScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (gameState.validationResult.isSolved) {
+            if (!zenMode && gameState.validationResult.isSolved) {
                 Surface(
                     color = Color(0xFF4CAF50),
                     shape = RoundedCornerShape(8.dp)
@@ -142,7 +143,7 @@ fun GameScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Hint + Reset on the left, timer on the right
+            // Hint + Reset on the left, timer on the right (timer hidden in zen mode)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,14 +161,16 @@ fun GameScreen(
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
                     ) { Text("Reset", fontSize = 13.sp) }
                 }
-                Text(
-                    text = elapsedSeconds.formatTime(),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Monospace,
-                    color = if (gameState.validationResult.isSolved)
-                        Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
-                )
+                if (!zenMode) {
+                    Text(
+                        text = elapsedSeconds.formatTime(),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.Monospace,
+                        color = if (gameState.validationResult.isSolved)
+                            Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Box(
@@ -184,13 +187,12 @@ fun GameScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            StatusRow(gameState = gameState)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Legend()
+            if (!zenMode) {
+                Spacer(modifier = Modifier.height(8.dp))
+                StatusRow(gameState = gameState)
+                Spacer(modifier = Modifier.height(8.dp))
+                Legend()
+            }
         }   // inner Column
     }       // outer Column
 }
