@@ -2,6 +2,7 @@ package com.example.lits.data
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -65,5 +66,44 @@ class ProgressStore(private val context: Context) {
         context.progressDataStore.edit { prefs ->
             prefs.remove(stateKey(gridSize, levelIndex))
         }
+    }
+
+    // ── Timer: in-progress elapsed seconds ───────────────────────────────────
+
+    private fun elapsedKey(gridSize: Int, levelIndex: Int) =
+        longPreferencesKey("timer_${gridSize}_${levelIndex}")
+
+    fun loadElapsedTime(gridSize: Int, levelIndex: Int): Flow<Long> =
+        context.progressDataStore.data.map { it[elapsedKey(gridSize, levelIndex)] ?: 0L }
+
+    suspend fun saveElapsedTime(gridSize: Int, levelIndex: Int, seconds: Long) {
+        context.progressDataStore.edit { it[elapsedKey(gridSize, levelIndex)] = seconds }
+    }
+
+    suspend fun clearElapsedTime(gridSize: Int, levelIndex: Int) {
+        context.progressDataStore.edit { it.remove(elapsedKey(gridSize, levelIndex)) }
+    }
+
+    // ── Completion time (best time when solved) ───────────────────────────────
+
+    private fun completionTimeKey(gridSize: Int, levelIndex: Int) =
+        longPreferencesKey("ctime_${gridSize}_${levelIndex}")
+
+    fun completionTimes(gridSize: Int): Flow<Map<Int, Long>> =
+        context.progressDataStore.data.map { prefs ->
+            prefs.asMap()
+                .entries
+                .filter { (key, _) -> key.name.startsWith("ctime_${gridSize}_") }
+                .mapNotNull { (key, value) ->
+                    val index = key.name.removePrefix("ctime_${gridSize}_").toIntOrNull()
+                        ?: return@mapNotNull null
+                    val time = value as? Long ?: return@mapNotNull null
+                    index to time
+                }
+                .toMap()
+        }
+
+    suspend fun saveCompletionTime(gridSize: Int, levelIndex: Int, seconds: Long) {
+        context.progressDataStore.edit { it[completionTimeKey(gridSize, levelIndex)] = seconds }
     }
 }

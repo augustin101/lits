@@ -39,6 +39,7 @@ fun LevelSelectScreen(
     levelCount: Int,
     completedLevels: Set<Int>,
     startedLevels: Set<Int>,
+    completionTimes: Map<Int, Long>,
     onLevelSelected: (levelIndex: Int) -> Unit,
     onBack: () -> Unit
 ) {
@@ -75,6 +76,7 @@ fun LevelSelectScreen(
                     number = index + 1,
                     completed = index in completedLevels,
                     started = index in startedLevels,
+                    completionTime = completionTimes[index],
                     onClick = { onLevelSelected(index) }
                 )
             }
@@ -83,12 +85,19 @@ fun LevelSelectScreen(
 }
 
 @Composable
-private fun LevelCell(number: Int, completed: Boolean, started: Boolean, onClick: () -> Unit) {
+private fun LevelCell(
+    number: Int,
+    completed: Boolean,
+    started: Boolean,
+    completionTime: Long?,
+    onClick: () -> Unit
+) {
     val containerColor = when {
         completed -> COLOR_COMPLETED
         started   -> COLOR_STARTED
         else      -> COLOR_INCOMPLETE
     }
+    val contentColor = if (completed || started) Color.White else Color(0xFF424242)
     Card(
         onClick = onClick,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
@@ -101,12 +110,28 @@ private fun LevelCell(number: Int, completed: Boolean, started: Boolean, onClick
                 .aspectRatio(1f),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "$number",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (completed || started) Color.White else Color(0xFF424242)
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "$number",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = contentColor
+                )
+                if (completed && completionTime != null) {
+                    Text(
+                        text = completionTime.formatTime(),
+                        fontSize = 9.sp,
+                        color = contentColor.copy(alpha = 0.85f)
+                    )
+                }
+            }
         }
     }
+}
+
+private fun Long.formatTime(): String {
+    val h = this / 3600
+    val m = (this % 3600) / 60
+    val s = this % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }

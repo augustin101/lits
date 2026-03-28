@@ -33,37 +33,60 @@ class GameViewModel(
     private val _gameState = MutableStateFlow(emptyState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
+    private val _elapsedSeconds = MutableStateFlow(0L)
+    val elapsedSeconds: StateFlow<Long> = _elapsedSeconds.asStateFlow()
+
+    private var timerJob: Job? = null
+    private var saveJob: Job? = null
+
     init {
         check(level.size < 17) {
             "Grid size ${level.size} exceeds the maximum of 16 for 2-bit-per-cell UInt32 row encoding"
         }
-        // Restore in-progress state asynchronously.
-        // The grid shows empty briefly (typically < 100ms) before the saved state loads.
         viewModelScope.launch {
-            val encoded = progressStore.savedCellStates(gridSize, levelIndex).first()
-            val restored = encoded?.decodeCellStates(level.size)
+            val savedEncoded = progressStore.savedCellStates(gridSize, levelIndex).first()
+            val savedElapsed = progressStore.loadElapsedTime(gridSize, levelIndex).first()
+
+            _elapsedSeconds.value = savedElapsed
+
+            val restored = savedEncoded?.decodeCellStates(level.size)
             if (restored != null) {
-                _gameState.value = GameState(
-                    level = level,
-                    cellStates = restored,
-                    validationResult = LitsValidator.validate(level, restored)
-                )
+                val result = LitsValidator.validate(level, restored)
+                _gameState.value = GameState(level, restored, result)
+                if (!result.isSolved) startTimer()
+            } else {
+                startTimer()
             }
         }
     }
 
-    private fun emptyState(): GameState {
-        val cellStates = List(level.size) { List(level.size) { CellState.EMPTY } }
-        return GameState(
-            level = level,
-            cellStates = cellStates,
-            validationResult = LitsValidator.validate(level, cellStates)
-        )
+    // ── Timer ──────────────────────────────────────────────────────────────────
+
+    private fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(1_000)
+                _elapsedSeconds.value++
+            }
+        }
+    }
+
+    fun pauseTimer() {
+        timerJob?.cancel()
+        timerJob = null
+        viewModelScope.launch {
+            progressStore.saveElapsedTime(gridSize, levelIndex, _elapsedSeconds.value)
+        }
+    }
+
+    fun resumeTimer() {
+        if (_gameState.value.validationResult.isSolved) return
+        if (timerJob?.isActive == true) return
+        startTimer()
     }
 
     // ── Cell interaction ──────────────────────────────────────────────────────
-
-    private var saveJob: Job? = null
 
     fun setCellState(row: Int, col: Int, state: CellState) {
         val current = _gameState.value
@@ -81,7 +104,14 @@ class GameViewModel(
 
         if (newGameState.validationResult.isSolved) {
             saveJob?.cancel()
-            viewModelScope.launch { progressStore.clearCellStates(gridSize, levelIndex) }
+            timerJob?.cancel()
+            timerJob = null
+            val finalTime = _elapsedSeconds.value
+            viewModelScope.launch {
+                progressStore.clearCellStates(gridSize, levelIndex)
+                progressStore.clearElapsedTime(gridSize, levelIndex)
+                progressStore.saveCompletionTime(gridSize, levelIndex, finalTime)
+            }
         } else {
             scheduleSave(newCellStates)
         }
@@ -89,23 +119,40 @@ class GameViewModel(
 
     fun resetGame() {
         saveJob?.cancel()
-        viewModelScope.launch { progressStore.clearCellStates(gridSize, levelIndex) }
+        timerJob?.cancel()
+        timerJob = null
+        _elapsedSeconds.value = 0L
+        viewModelScope.launch {
+            progressStore.clearCellStates(gridSize, levelIndex)
+            progressStore.clearElapsedTime(gridSize, levelIndex)
+        }
         _gameState.value = emptyState()
+        startTimer()
     }
 
     override fun onCleared() {
         super.onCleared()
-        // Flush any pending debounced save immediately when the ViewModel is destroyed.
-        saveJob?.cancel()
+        timerJob?.cancel()
         val state = _gameState.value
         if (!state.validationResult.isSolved) {
+            saveJob?.cancel()
             viewModelScope.launch {
                 progressStore.saveCellStates(gridSize, levelIndex, state.cellStates.encode())
+                progressStore.saveElapsedTime(gridSize, levelIndex, _elapsedSeconds.value)
             }
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private fun emptyState(): GameState {
+        val cellStates = List(level.size) { List(level.size) { CellState.EMPTY } }
+        return GameState(
+            level = level,
+            cellStates = cellStates,
+            validationResult = LitsValidator.validate(level, cellStates)
+        )
+    }
 
     private fun scheduleSave(cellStates: List<List<CellState>>) {
         saveJob?.cancel()
@@ -115,9 +162,7 @@ class GameViewModel(
         }
     }
 
-    // Each row is packed into one UInt32 using 2 bits per cell (max 16 cells = 32 bits).
-    // CellState ordinals: 0=EMPTY, 1=SHADED, 2=MARKED.
-    // Cell 0 occupies the most-significant pair of bits; cell[size-1] the least-significant.
+    // Each row packed into one UInt32: 2 bits per cell, cell 0 at MSB pair.
     // Stored as a hex string: 8 chars per row, rows concatenated.
 
     private fun List<List<CellState>>.encode(): String =

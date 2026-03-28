@@ -38,11 +38,14 @@ fun AppNavigation() {
                 .collectAsState(initial = emptySet())
             val startedLevels by progressViewModel.startedLevels(gridSize)
                 .collectAsState(initial = emptySet())
+            val completionTimes by progressViewModel.completionTimes(gridSize)
+                .collectAsState(initial = emptyMap())
             LevelSelectScreen(
                 gridSize = gridSize,
                 levelCount = levelRepository.getLevelCount(gridSize),
                 completedLevels = completedLevels,
                 startedLevels = startedLevels,
+                completionTimes = completionTimes,
                 onLevelSelected = { index -> navController.navigate("game/$gridSize/$index") },
                 onBack = { navController.popBackStack() }
             )
