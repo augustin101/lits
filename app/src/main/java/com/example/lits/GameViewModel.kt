@@ -14,7 +14,9 @@ class GameViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
     val gridSize: Int = savedStateHandle.get<Int>("gridSize") ?: 5
     val levelIndex: Int = savedStateHandle.get<Int>("levelIndex") ?: 0
-    private val level = Levels.getLevel(gridSize, levelIndex)
+    private val level = requireNotNull(Levels.getLevel(gridSize, levelIndex)) {
+        "No level defined for size=$gridSize index=$levelIndex"
+    }
 
     private val _gameState = MutableStateFlow(createInitialState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
