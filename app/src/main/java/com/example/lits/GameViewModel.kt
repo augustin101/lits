@@ -36,7 +36,9 @@ class GameViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
         _gameState.value = GameState(
             level = level,
             cellStates = newCellStates,
-            validationResult = LitsValidator.validate(level, newCellStates)
+            validationResult = LitsValidator.validateIncremental(
+                level, newCellStates, row, col, current.validationResult
+            )
         )
     }
 
