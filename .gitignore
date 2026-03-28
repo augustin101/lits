@@ -1,16 +1,32 @@
+# IDE - Android Studio / IntelliJ
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.ipr
+
+# Build Output
+bin/
+gen/
+out/
+build/
+app/build/
+
+# Gradle
+.gradle/
+build.gradle.kts.swp
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Local config (Crucial to ignore)
 local.properties
-CLAUDE.md
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Android Specific
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
